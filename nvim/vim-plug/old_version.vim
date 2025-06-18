@@ -6,18 +6,11 @@ if empty(glob('~/.config/nvim/autoload/plug.vim'))
   "autocmd VimEnter * PlugInstall | source $MYVIMRC
 endif
 
-call plug#begin('~/.config/nvim/autoload/plugged')
+ call plug#begin('~/.config/nvim/autoload/plugged')
 
     " Better Syntax Support
     Plug 'sheerun/vim-polyglot'
-    " File Explorer
-    Plug 'scrooloose/NERDTree'
-    
     Plug 'nvim-lualine/lualine.nvim'
-    "If you want to have icons in your statusline choose one of these
-    "Plug 'nvim-tree/nvim-web-devicons' 
-    
-    "Plug 'AlexvZyl/nordic.nvim', { 'branch': 'main' }   
     Plug 'jiangmiao/auto-pairs'
    
     Plug 'morhetz/gruvbox'
@@ -32,8 +25,17 @@ call plug#begin('~/.config/nvim/autoload/plugged')
     \ }
 
     Plug 'https://github.com/vim-airline/vim-airline' " Status bar
-call plug#end()
+    
+    ">>>>>>>>>RUST
+    Plug 'rust-lang/rust.vim'
+    Plug 'rust-analyzer/rust-analyzer'
+    Plug 'simrat39/rust-tools.nvim'
+    ">>>>>>>>>RUST Debugging
+    Plug 'nvim-lua/plenary.nvim'
+    Plug 'mfussenegger/nvim-dap'   
 
+
+    call plug#end()
 "themes
 " Vim Script
 colorscheme gruvbox-flat
@@ -41,8 +43,6 @@ colorscheme gruvbox-flat
 "colorscheme nordic
 "colorscheme gruvbox
 
-
-  
 "COLORS
 highlight Normal     ctermbg=NONE guibg=NONE
 highlight LineNr     ctermbg=NONE guibg=NONE
@@ -51,11 +51,40 @@ highlight SignColumn ctermbg=NONE guibg=NONE
 let g:ale_fixers = ['prettier', 'standard']
 
 
+"Auto-completion
+set completeopt=menuone,noselect
+set guifont=Your\ Font\ Name:h15
+set clipboard+=unnamedplus
+let g:compe = {}
+let g:compe.enabled = v:true
+let g:compe.autocomplete = v:true
+let g:compe.debug = v:false
+let g:compe.min_length = 1
+let g:compe.preselect = 'enable'
+let g:compe.throttle_time = 80
+let g:compe.source_timeout = 200
+let g:compe.resolve_timeout = 800
+let g:compe.incomplete_delay = 400
+let g:compe.max_abbr_width = 100
+let g:compe.max_kind_width = 100
+let g:compe.max_menu_width = 100
+let g:compe.documentation = v:true
+
+let g:compe.source = {}
+let g:compe.source.path = v:true
+let g:compe.source.buffer = v:true
+let g:compe.source.calc = v:true
+let g:compe.source.nvim_lsp = v:true
+let g:compe.source.nvim_lua = v:true
+let g:compe.source.vsnip = v:true
+let g:compe.source.ultisnips = v:true
+let g:compe.source.luasnip = v:true
+let g:compe.source.emoji = v:true
 
 
 
 "statusbar line config
-lua << END
+lua << END 
 
 -- Eviline config for lualine
 -- Author: shadmansaleh
@@ -73,8 +102,11 @@ local colors = {
   green    = '#98be65',
   orange   = '#FF8800',
   violet   = '#458588',
-  magenta  = '#ec5f67',
+--magenta  = '#bf5a52',   --gruvbox brown
+  magenta  = '#d65d0e',   --gruvbox brown 2 
+--magenta  = '#cc241d',
   blue     = '#000000',
+  lue     = '#000000',
   red      = '#7c6f64',
 }
 
@@ -132,23 +164,21 @@ local function ins_left(component)
   table.insert(config.sections.lualine_c, component)
 end
 
--- Inserts a component in lualine_x at right section
 local function ins_right(component)
   table.insert(config.sections.lualine_x, component)
 end
 
 ins_left {
   function()
-    return '▊'
+    return '0'
   end,
-  color = { fg = colors.blue }, -- Sets highlighting of component
+  color = { fg = colors.blue },      -- Sets highlighting of component
   padding = { left = 0, right = 1 }, -- We don't need space before this
 }
-
 ins_left {
   -- mode component
   function()
-    return ''
+    return '0'
   end,
   color = function()
     -- auto change color according to neovims mode
@@ -178,23 +208,12 @@ ins_left {
   end,
   padding = { right = 1 },
 }
-
-ins_left {
-  -- filesize component
-  'filesize',
-  cond = conditions.buffer_not_empty,
-}
-
+ins_left { 'location' , color = {fg = colors.magenta}}
 ins_left {
   'filename',
   cond = conditions.buffer_not_empty,
-  color = { fg = colors.magenta, gui = 'bold' },
+  color = { fg = '#d4be98' },         
 }
-
-ins_left { 'location' }
-
-ins_left { 'progress', color = { fg = colors.fg, gui = 'bold' } }
-
 ins_left {
   'diagnostics',
   sources = { 'nvim_diagnostic' },
@@ -206,8 +225,6 @@ ins_left {
   },
 }
 
--- Insert mid section. You can make any number of sections in neovim :)
--- for lualine it's any number greater then 2
 ins_left {
   function()
     return '%='
@@ -217,107 +234,41 @@ ins_left {
 ins_left {
   -- Lsp server name .
   function()
-    local msg = 'No Active Lsp'
+    local msg = 'no active lsp'
     local buf_ft = vim.api.nvim_buf_get_option(0, 'filetype')
-    local clients = vim.lsp.get_active_clients()
+    local clients = vim.lsp.get_clients()
     if next(clients) == nil then
       return msg
     end
     for _, client in ipairs(clients) do
       local filetypes = client.config.filetypes
-      if filetypes and vim.fn.index(filetypes, buf_ft) ~= -1 then
+      if filetypes and vim.fn.index(filetypes, 
         return client.name
       end
     end
     return msg
   end,
-  icon = ' LSP:',
-  color = { fg = '#ffffff', gui = 'bold' },
+  icon = ' lsp:',
+  color = { fg = '#7c6f64' },
 }
-
--- Add components to right sections
-ins_right {
-  'o:encoding', -- option component same as &encoding in viml
-  fmt = string.upper, -- I'm not sure why it's upper case either ;)
-  cond = conditions.hide_in_width,
-  color = { fg = colors.green, gui = 'bold' },
-}
-
-ins_right {
-  'fileformat',
-  fmt = string.upper,
-  icons_enabled = false, -- I think icons are cool but Eviline doesn't have them. sigh
-  color = { fg = colors.green, gui = 'bold' },
-}
-
 ins_right {
   'branch',
   icon = '',
-  color = { fg = colors.violet, gui = 'bold' },
+  color = { fg = '#7c6f64' },
 }
 
 ins_right {
   'diff',
-  -- Is it me or the symbol for modified us really weird
-  symbols = { added = ' ', modified = '󰝤 ', removed = ' ' },
+ symbols     = { added = ' ', modified = '󰝤 ', removed = ' ' },
   diff_color = {
-    added = { fg = colors.green },
-    modified = { fg = colors.orange },
-    removed = { fg = colors.red },
+    added    = { fg = '#7c6f64' },
+    modified = { fg = '#7c6f64' },
+    removed  = { fg = '#7c6f64' },
   },
-  cond = conditions.hide_in_width,
+  cond       = conditions.hide_in_width,
 }
-
-ins_right {
-  function()
-    return '▊'
-  end,
-  color = { fg = colors.blue },
-  padding = { left = 1 },
-}
-
 -- Now don't forget to initialize lualine
 lualine.setup(config)
 require('lualine').setup()
 END
-
-
-
-"Auto-completion
-set completeopt=menuone,noselect
-set guifont=Your\ Font\ Name:h15
-set clipboard+=unnamedplus
-let g:compe = {}
-let g:compe.enabled = v:true
-let g:compe.autocomplete = v:true
-let g:compe.debug = v:false
-let g:compe.min_length = 1
-let g:compe.preselect = 'enable'
-let g:compe.throttle_time = 80
-let g:compe.source_timeout = 200
-let g:compe.resolve_timeout = 800
-let g:compe.incomplete_delay = 400
-let g:compe.max_abbr_width = 100
-let g:compe.max_kind_width = 100
-let g:compe.max_menu_width = 100
-let g:compe.documentation = v:true
-
-let g:compe.source = {}
-let g:compe.source.path = v:true
-let g:compe.source.buffer = v:true
-let g:compe.source.calc = v:true
-let g:compe.source.nvim_lsp = v:true
-let g:compe.source.nvim_lua = v:true
-let g:compe.source.vsnip = v:true
-let g:compe.source.ultisnips = v:true
-let g:compe.source.luasnip = v:true
-let g:compe.source.emoji = v:true
-
-
-
-inoremap <silent><expr> <C-Space> compe#complete()
-inoremap <silent><expr> <CR>      compe#confirm('<CR>')
-inoremap <silent><expr> <C-e>     compe#close('<C-e>')
-inoremap <silent><expr> <C-f>     compe#scroll({ 'delta': +4 })
-inoremap <silent><expr> <C-d>     compe#scroll({ 'delta': -4 })
 
